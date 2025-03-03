@@ -1,104 +1,52 @@
 #ifndef VIDEO_RECORDER_H
 #define VIDEO_RECORDER_H
 
-#include <Arduino.h>
-#include <esp_camera.h>
+#include "esp_camera.h"
 #include "SDCardManager.h"
+#include <Arduino.h>
 
-#define MAKE_FOURCC(a,b,c,d) ((uint32_t)(d)<<24 | (uint32_t)(c)<<16 | (uint32_t)(b)<<8 | (uint32_t)(a))
+#define PWDN_GPIO_NUM     32
+#define RESET_GPIO_NUM    -1
+#define XCLK_GPIO_NUM      0
+#define SIOD_GPIO_NUM     26
+#define SIOC_GPIO_NUM     27
+#define Y9_GPIO_NUM       35
+#define Y8_GPIO_NUM       34
+#define Y7_GPIO_NUM       39
+#define Y6_GPIO_NUM       36
+#define Y5_GPIO_NUM       21
+#define Y4_GPIO_NUM       19
+#define Y3_GPIO_NUM       18
+#define Y2_GPIO_NUM        5
+#define VSYNC_GPIO_NUM    25
+#define HREF_GPIO_NUM     23
+#define PCLK_GPIO_NUM     22
 
-const uint32_t FOURCC_RIFF = MAKE_FOURCC('R','I','F','F');
-const uint32_t FOURCC_AVI  = MAKE_FOURCC('A','V','I',' ');
-const uint32_t FOURCC_LIST = MAKE_FOURCC('L','I','S','T');
-const uint32_t FOURCC_HDRL = MAKE_FOURCC('h','d','r','l');
-const uint32_t FOURCC_AVIH = MAKE_FOURCC('a','v','i','h');
-const uint32_t FOURCC_STRL = MAKE_FOURCC('s','t','r','l');
-const uint32_t FOURCC_STRH = MAKE_FOURCC('s','t','r','h');
-const uint32_t FOURCC_STRF = MAKE_FOURCC('s','t','r','f');
-const uint32_t FOURCC_MOVI = MAKE_FOURCC('m','o','v','i');
-const uint32_t FOURCC_00DC = MAKE_FOURCC('0','0','d','c');
-
-#pragma pack(push, 1)
-typedef struct {
-    uint32_t dwMicroSecPerFrame;
-    uint32_t dwMaxBytesPerSec;
-    uint32_t dwPaddingGranularity;
-    uint32_t dwFlags;
-    uint32_t dwTotalFrames;
-    uint32_t dwInitialFrames;
-    uint32_t dwStreams;
-    uint32_t dwSuggestedBufferSize;
-    uint32_t dwWidth;
-    uint32_t dwHeight;
-    uint32_t dwReserved[4];
-} MainAVIHeader;
-
-typedef struct {
-    uint32_t fccType;
-    uint32_t fccHandler;
-    uint32_t dwFlags;
-    uint16_t wPriority;
-    uint16_t wLanguage;
-    uint32_t dwInitialFrames;
-    uint32_t dwScale;
-    uint32_t dwRate;
-    uint32_t dwStart;
-    uint32_t dwLength;
-    uint32_t dwSuggestedBufferSize;
-    uint32_t dwQuality;
-    uint32_t dwSampleSize;
-    struct {
-        short int left;
-        short int top;
-        short int right;
-        short int bottom;
-    } rcFrame;
-} AVIStreamHeader;
-
-typedef struct {
-    uint32_t biSize;
-    int32_t  biWidth;
-    int32_t  biHeight;
-    uint16_t biPlanes;
-    uint16_t biBitCount;
-    uint32_t biCompression;
-    uint32_t biSizeImage;
-    int32_t  biXPelsPerMeter;
-    int32_t  biYPelsPerMeter;
-    uint32_t biClrUsed;
-    uint32_t biClrImportant;
-} BITMAPINFOHEADER;
-#pragma pack(pop)
+#define FRAME_SIZE        FRAMESIZE_VGA
+#define JPEG_QUALITY      10
+#define FRAME_RATE        10
+#define RECORD_TIME       10
+#define LED_PIN            4
+#define AVIOFFSET        240
 
 class VideoRecorder {
-public:
-  VideoRecorder(SDCardManager& sdManager, int frameRate = 1, int recordingTimeSeconds = 10);
-  bool initCamera();
-  bool recordVideo(const char* filename);
-  bool analyzeAviFile(const char* filename);
+  private:
+    SDCardManager& sdManager;
+    int frameRate;
+    int recordingTimeSeconds;
 
-private:
-  SDCardManager& _sdManager;
-  const int frameRate;
-  const int recordingTimeSeconds;
-  const int frameDelayMs;
+    camera_fb_t* captureStableFrame();
+    void createAviHeader(File &file, int width, int height, int fps, int num_frames);
+    void updateAviHeader(File &file, uint32_t total_frames, uint32_t *frame_sizes, uint32_t movi_size);
+    void writeQuartet(uint32_t value, File &file);
+    void writeFrame(File &file, camera_fb_t *fb, uint32_t *frame_size);
+    void writeIndex(File &file, uint32_t frame_count, uint32_t *frame_sizes, uint32_t movi_start);
 
-  static const int PWDN_GPIO_NUM = 32;
-  static const int RESET_GPIO_NUM = -1;
-  static const int XCLK_GPIO_NUM = 0;
-  static const int SIOD_GPIO_NUM = 26;
-  static const int SIOC_GPIO_NUM = 27;
-  static const int Y9_GPIO_NUM = 35;
-  static const int Y8_GPIO_NUM = 34;
-  static const int Y7_GPIO_NUM = 39;
-  static const int Y6_GPIO_NUM = 36;
-  static const int Y5_GPIO_NUM = 21;
-  static const int Y4_GPIO_NUM = 19;
-  static const int Y3_GPIO_NUM = 18;
-  static const int Y2_GPIO_NUM = 5;
-  static const int VSYNC_GPIO_NUM = 25;
-  static const int HREF_GPIO_NUM = 23;
-  static const int PCLK_GPIO_NUM = 22;
+  public:
+    VideoRecorder(SDCardManager& sdManager, int frameRate = 10, int recordingTimeSeconds = 10);
+    bool initCamera();
+    bool recordVideo(const char* filename);
+    void analyzeAviFile(const char* filename);
 };
 
 #endif

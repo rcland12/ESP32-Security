@@ -4,17 +4,14 @@ ConfigManager::ConfigManager(SDCardManager& sdManager)
   : _sdManager(sdManager) {
 }
 
-Config ConfigManager::loadConfig(const char* configPath) {
+Config ConfigManager::loadConfig() {
   Config config;
 
   config.wifi_ssid = "";
   config.wifi_password = "";
-  config.ftp_server = "";
-  config.ftp_user = "";
-  config.ftp_password = "";
-  config.ftp_port = 21;
+  config.server_url = "";
 
-  File configFile = _sdManager.openFile(configPath, FILE_READ);
+  File configFile = _sdManager.openFile(configFilePath, FILE_READ);
   if (!configFile) {
     Serial.println("Failed to open config file");
     return config;
@@ -42,38 +39,16 @@ Config ConfigManager::loadConfig(const char* configPath) {
       config.wifi_ssid = value;
     } else if (key == "WIFI_PASSWORD") {
       config.wifi_password = value;
-    } else if (key == "FTP_SERVER") {
-      config.ftp_server = value;
-    } else if (key == "FTP_USER") {
-      config.ftp_user = value;
-    } else if (key == "FTP_PASSWORD") {
-      config.ftp_password = value;
-    } else if (key == "FTP_PORT") {
-      config.ftp_port = value.toInt();
+    } else if (key == "SERVER_URL") {
+      config.server_url = value;
     }
   }
 
   configFile.close();
+  
+  Serial.println("Config loaded:");
+  Serial.println("WiFi SSID: " + config.wifi_ssid);
+  Serial.println("Server URL: " + config.server_url);
+  
   return config;
-}
-
-bool ConfigManager::saveConfig(const Config& config, const char* configPath) {
-  File configFile = _sdManager.openFile(configPath, FILE_WRITE);
-  if (!configFile) {
-    Serial.println("Failed to open config file for writing");
-    return false;
-  }
-
-  configFile.println("# Security Camera Configuration");
-  configFile.println();
-
-  configFile.printf("WIFI_SSID=%s\n", config.wifi_ssid.c_str());
-  configFile.printf("WIFI_PASSWORD=%s\n", config.wifi_password.c_str());
-  configFile.printf("FTP_SERVER=%s\n", config.ftp_server.c_str());
-  configFile.printf("FTP_USER=%s\n", config.ftp_user.c_str());
-  configFile.printf("FTP_PASSWORD=%s\n", config.ftp_password.c_str());
-  configFile.printf("FTP_PORT=%d\n", config.ftp_port);
-
-  configFile.close();
-  return true;
 }

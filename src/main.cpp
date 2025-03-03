@@ -1,17 +1,14 @@
-#define FTPCLIENT_GENERIC_IMPL_H
-#include <FTPClient_Generic_Impl.h>
-
-#include <Arduino.h>
 #include "ConfigManager.h"
 #include "NetworkManager.h"
 #include "SDCardManager.h"
-#include "VideoRecorder.h"
 #include "soc/rtc_cntl_reg.h"
+#include "VideoRecorder.h"
+#include <Arduino.h>
 
 const int pirPin = 12;
 const int SD_CS = 5;
+const int frameRate = 10;
 const int recordingTimeSeconds = 10;
-const int frameRate = 1;
 
 SDCardManager sdManager(SD_CS);
 ConfigManager configManager(sdManager);
@@ -39,10 +36,7 @@ void setup() {
     sdManager,
     config.wifi_ssid.c_str(),
     config.wifi_password.c_str(),
-    config.ftp_server.c_str(),
-    config.ftp_user.c_str(),
-    config.ftp_password.c_str(),
-    config.ftp_port
+    config.server_url.c_str()
   );
 
   pinMode(pirPin, INPUT_PULLDOWN);
@@ -63,12 +57,6 @@ void setup() {
 }
 
 void loop() {
-  // if (!sdManager.remount()) {
-  //   Serial.println("SD Card remount needed");
-  //   delay(1000);
-  //   return;
-  // }
-
   if (digitalRead(pirPin) == HIGH) {
     Serial.println("Motion detected! Recording video...");
 
@@ -78,9 +66,8 @@ void loop() {
       Serial.println("Video recorded successfully");
       videoRecorder.analyzeAviFile(filename.c_str());
 
-      if (networkManager && networkManager->uploadToFTP(filename.c_str())) {
+      if (networkManager && networkManager->uploadFile(filename.c_str())) {
         Serial.println("Video uploaded successfully");
-        // Optionally delete the local file after successful upload
         // sdManager.deleteFile(filename.c_str());
       } else {
         Serial.println("Failed to upload video");
