@@ -41,6 +41,8 @@ Config ConfigManager::loadConfig() {
       config.wifi_password = value;
     } else if (key == "SERVER_URL") {
       config.server_url = value;
+    } else if (key == "CAMERA_ID") {
+      config.camera_id = value;
     }
   }
 
@@ -49,6 +51,7 @@ Config ConfigManager::loadConfig() {
   Serial.println("Config loaded:");
   Serial.println("WiFi SSID: " + config.wifi_ssid);
   Serial.println("Server URL: " + config.server_url);
+  Serial.println("Camera ID: " + config.camera_id);
   
   return config;
 }

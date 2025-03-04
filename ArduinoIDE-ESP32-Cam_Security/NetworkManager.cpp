@@ -4,12 +4,14 @@ NetworkManager::NetworkManager(
   SDCardManager& sdManager,
   const char* ssid, 
   const char* password,
-  const char* server_url
+  const char* server_url,
+  const char* camera_id
 ):
   _sdManager(sdManager),
   _ssid(ssid),
   _password(password),
-  _server_url(server_url)
+  _server_url(server_url),
+  _camera_id(camera_id)
 {}
 
 NetworkManager::~NetworkManager() {}
@@ -69,6 +71,9 @@ bool NetworkManager::uploadFile(const char* filename) {
   if (!uploadUrl.endsWith("/")) {
     uploadUrl += "/";
   }
+
+  uploadUrl += _camera_id;
+  uploadUrl += "/";
   uploadUrl += justFilename;
   
   Serial.printf("Uploading to URL: %s\n", uploadUrl.c_str());

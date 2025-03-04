@@ -2,12 +2,12 @@
 #define CONFIG_MANAGER_H
 
 #include "SDCardManager.h"
-#include <Arduino.h>
 
 struct Config {
   String wifi_ssid;
   String wifi_password;
   String server_url;
+  String camera_id;
 
   bool isValid() const {
     return wifi_ssid.length() > 0 && 
@@ -17,13 +17,13 @@ struct Config {
 };
 
 class ConfigManager {
-  public:
-    ConfigManager(SDCardManager& sdManager);
-    Config loadConfig();
-    
-  private:
-    SDCardManager& _sdManager;
-    const char* configFilePath = "/config.txt";
+public:
+  ConfigManager(SDCardManager& sdManager);
+  Config loadConfig();
+
+private:
+  SDCardManager& _sdManager;
+  const char* configFilePath = "/config.txt";
 };
 
 #endif

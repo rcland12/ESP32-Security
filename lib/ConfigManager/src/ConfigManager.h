@@ -1,0 +1,30 @@
+#ifndef CONFIG_MANAGER_H
+#define CONFIG_MANAGER_H
+
+#include <Arduino.h>
+#include <SDCardManager.h>
+
+struct Config {
+  String wifi_ssid;
+  String wifi_password;
+  String server_url;
+  String camera_id;
+
+  bool isValid() const {
+    return wifi_ssid.length() > 0 && 
+           wifi_password.length() > 0 && 
+           server_url.length() > 0;
+  }
+};
+
+class ConfigManager {
+public:
+  ConfigManager(SDCardManager& sdManager);
+  Config loadConfig();
+
+private:
+  SDCardManager& _sdManager;
+  const char* configFilePath = "/config.txt";
+};
+
+#endif

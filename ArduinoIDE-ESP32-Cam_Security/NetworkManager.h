@@ -2,19 +2,19 @@
 #define NETWORK_MANAGER_H
 
 #include "SDCardManager.h"
-#include <Arduino.h>
 #include <HTTPClient.h>
 #include <WiFi.h>
 
 class NetworkManager {
-  public:
+public:
   NetworkManager(
     SDCardManager& sdManager,
     const char* ssid, 
     const char* password,
-    const char* server_url
+    const char* server_url,
+    const char* camera_id
   );
-    
+
   ~NetworkManager();
 
   bool initWiFi(int maxAttempts = 20);
@@ -27,6 +27,7 @@ private:
   String _ssid;
   String _password;
   String _server_url;
+  String _camera_id;
 
   static const int LOCAL_BUFFER_SIZE = 1024;
 };

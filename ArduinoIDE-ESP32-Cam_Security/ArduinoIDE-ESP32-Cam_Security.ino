@@ -1,10 +1,9 @@
 #include "soc/rtc_cntl_reg.h"
 #include "PinDefinitions.h"
-#include <Arduino.h>
-#include <ConfigManager.h>
-#include <NetworkManager.h>
-#include <SDCardManager.h>
-#include <VideoRecorder.h>
+#include "ConfigManager.h"
+#include "NetworkManager.h"
+#include "SDCardManager.h"
+#include "VideoRecorder.h"
 
 SDCardManager sdManager(SD_CS);
 ConfigManager configManager(sdManager);

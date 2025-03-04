@@ -28,7 +28,7 @@ bool VideoRecorder::initCamera() {
   config.pin_sscb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  
+
   config.xclk_freq_hz = 10000000;
   config.pixel_format = PIXFORMAT_JPEG;
   config.frame_size = FRAME_SIZE;
@@ -85,10 +85,10 @@ camera_fb_t* VideoRecorder::captureStableFrame() {
       delay(50);
       continue;
     }
-  
+
     return fb;
   }
-  
+
   return fb;
 }
 
@@ -310,7 +310,7 @@ void VideoRecorder::writeIndex(File &file, uint32_t frame_count, uint32_t *frame
       Serial.printf("Index entry %d: offset=%d, size=%d\n", i, offset - (8 + frame_sizes[i]), frame_sizes[i]);
     }
   }
-  
+
   file.flush();
 }
 
@@ -318,15 +318,15 @@ bool VideoRecorder::recordVideo(const char* filename) {
   if (sdManager.exists(filename)) {
     sdManager.deleteFile(filename);
   }
-  
+
   File aviFile = sdManager.openFile(filename, FILE_WRITE);
   if (!aviFile) {
     Serial.println("Failed to open file for writing");
     return false;
   }
-  
+
   int width = 0, height = 0;
-  
+
   switch (FRAME_SIZE) {
     case FRAMESIZE_QVGA: width = 320; height = 240; break;
     case FRAMESIZE_VGA: width = 640; height = 480; break;
@@ -406,7 +406,7 @@ bool VideoRecorder::recordVideo(const char* filename) {
       delay(1);
     }
   }
-  
+
   Serial.printf(
     "Recording complete: %d frames in %0.1f seconds (avg %0.1f FPS)\n", 
     frameCount, 
@@ -425,14 +425,14 @@ bool VideoRecorder::recordVideo(const char* filename) {
 
   Serial.println("AVI file finalized");
   delay(1000);
-  
+
   Serial.printf(
     "Recording summary: %d frames in %d seconds (target: %d FPS)\n", 
     frameCount,
     RECORD_TIME,
     FRAME_RATE
   );
-  
+
   return true;
 }
 
@@ -494,7 +494,7 @@ void VideoRecorder::analyzeAviFile(const char* filename) {
   Serial.printf("FPS: %.2f\n", fps);
   Serial.printf("Frame count: %u\n", frameCount);
   Serial.printf("Duration: %.2f seconds\n", frameCount / fps);
-  
+
   aviFile.close();
   Serial.println("AVI file analysis complete");
 }
