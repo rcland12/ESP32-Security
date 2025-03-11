@@ -205,27 +205,33 @@ void VideoRecorder::updateAviHeader(File &file, uint32_t total_frames, uint32_t 
 
   Serial.printf(
     "Updating headers: frames=%d, file_size=%d, riff_size=%d, movi_size=%d\n", 
-    total_frames,
-    file_size,
-    riff_size,
-    movi_size
+    total_frames, file_size, riff_size, movi_size
   );
+
+  uint32_t us_per_frame = 1000000 / frameRate;
 
   file.seek(4);
   file.write((uint8_t*)&riff_size, 4);
 
-  file.seek(0x30);
-  file.write((uint8_t*)&total_frames, 4);
+  file.seek(0x20);
+  writeQuartet(us_per_frame, file);
 
-  file.seek(0x38);
-  file.write((uint8_t*)&max_frame_size, 4);
+  uint32_t max_bytes_per_sec = (total_frames * max_frame_size) / (recordingTimeSeconds);
+  file.seek(0x24);
+  writeQuartet(max_bytes_per_sec, file);
+
+  file.seek(0x30);
+  writeQuartet(total_frames, file);
+
+  file.seek(0x8c);
+  writeQuartet(total_frames, file);
 
   file.seek(0x84);
-  file.write((uint8_t*)&total_frames, 4);
+  writeQuartet(frameRate, file);
 
   file.seek(0xFC);
   uint32_t movi_list_size = movi_size + 4;
-  file.write((uint8_t*)&movi_list_size, 4);
+  writeQuartet(movi_list_size, file);
 
   file.flush();
 }
@@ -384,7 +390,6 @@ bool VideoRecorder::recordVideo(const char* filename) {
         );
         aviFile.flush();
       }
-
     } else {
       delay(1);
     }
