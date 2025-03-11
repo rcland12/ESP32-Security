@@ -1,4 +1,5 @@
 #include "soc/rtc_cntl_reg.h"
+#include "ConfigSettings.h"
 #include "PinDefinitions.h"
 #include <Arduino.h>
 #include <ConfigManager.h>
@@ -8,7 +9,7 @@
 
 SDCardManager sdManager(SD_CS);
 ConfigManager configManager(sdManager);
-VideoRecorder videoRecorder(sdManager, FRAME_RATE, REC_TIME_SEC);
+VideoRecorder videoRecorder(sdManager, FRAME_RATE, RECORD_TIME_SEC);
 NetworkManager* networkManager = nullptr;
 
 void setup() {

@@ -47,7 +47,7 @@ Config ConfigManager::loadConfig() {
   }
 
   configFile.close();
-  
+
   Serial.println("Config loaded:");
   Serial.println("WiFi SSID: " + config.wifi_ssid);
   Serial.println("Server URL: " + config.server_url);

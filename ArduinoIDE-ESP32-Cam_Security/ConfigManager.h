@@ -1,7 +1,7 @@
 #ifndef CONFIG_MANAGER_H
 #define CONFIG_MANAGER_H
 
-#include "SDCardManager.h"
+#include <SDCardManager.h>
 
 struct Config {
   String wifi_ssid;

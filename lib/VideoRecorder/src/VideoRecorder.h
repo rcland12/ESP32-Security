@@ -2,6 +2,7 @@
 #define VIDEO_RECORDER_H
 
 #include "esp_camera.h"
+#include "ConfigSettings.h"
 #include "PinDefinitions.h"
 #include <Arduino.h>
 #include <SDCardManager.h>
@@ -20,7 +21,7 @@ private:
   void writeIndex(File &file, uint32_t frame_count, uint32_t *frame_sizes, uint32_t movi_start);
 
 public:
-  VideoRecorder(SDCardManager& sdManager, int frameRate = 10, int recordingTimeSeconds = 10);
+  VideoRecorder(SDCardManager& sdManager, int frameRate = FRAME_RATE, int recordingTimeSeconds = RECORD_TIME_SEC);
   bool initCamera();
   bool recordVideo(const char* filename);
   void analyzeAviFile(const char* filename);

@@ -1,5 +1,6 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc.h"
+#include "ConfigSettings.h"
 #include "VideoRecorder.h"
 
 VideoRecorder::VideoRecorder(SDCardManager& sdManager, int frameRate, int recordingTimeSeconds) 
@@ -107,8 +108,7 @@ void VideoRecorder::createAviHeader(File &file, int width, int height, int fps, 
   const char list_movi[] = "LIST";
   const char movi[] = "movi";
 
-  uint32_t us_per_frame = 100000;
-
+  uint32_t us_per_frame = 1000000 / fps;
   uint32_t max_bytes_per_sec = width * height * 3 * fps;
 
   file.write((const uint8_t*)riff, 4);
@@ -201,7 +201,6 @@ void VideoRecorder::updateAviHeader(File &file, uint32_t total_frames, uint32_t 
   }
 
   uint32_t file_size = file.size();
-
   uint32_t riff_size = file_size - 8;
 
   Serial.printf(
@@ -231,32 +230,6 @@ void VideoRecorder::updateAviHeader(File &file, uint32_t total_frames, uint32_t 
   file.flush();
 }
 
-void maintain_frame_rate(unsigned long &next_frame_time, int frame_interval, int frame_count) {
-  unsigned long current_time = millis();
-  unsigned long target_time = next_frame_time + frame_interval;
-
-  if (target_time < current_time) {
-    if (current_time - target_time > 500) {
-      next_frame_time = current_time;
-    } else {
-      next_frame_time = target_time;
-    }
-  } else {
-    next_frame_time = target_time;
-    while (millis() < next_frame_time) {
-      delay(1);
-    }
-  }
-
-  if (frame_count % 30 == 0) {
-    Serial.printf(
-      "Frame %d, time diff: %ld ms\n", 
-      frame_count,
-      (long)(millis() - next_frame_time)
-    );
-  }
-}
-
 void VideoRecorder::writeQuartet(uint32_t value, File &file) {
   uint8_t buf[4];
   buf[0] = value & 0xFF;
@@ -268,9 +241,7 @@ void VideoRecorder::writeQuartet(uint32_t value, File &file) {
 
 void VideoRecorder::writeFrame(File &file, camera_fb_t *fb, uint32_t *frame_size) {
   file.write((const uint8_t*)"00dc", 4);
-
   file.write((uint8_t*)&fb->len, 4);
-
   file.write(fb->buf, fb->len);
 
   *frame_size = fb->len;
@@ -299,9 +270,7 @@ void VideoRecorder::writeIndex(File &file, uint32_t frame_count, uint32_t *frame
 
     uint32_t flags = 0x10;
     file.write((uint8_t*)&flags, 4);
-
     file.write((uint8_t*)&offset, 4);
-
     file.write((uint8_t*)&frame_sizes[i], 4);
 
     offset += 8 + frame_sizes[i];
@@ -336,15 +305,15 @@ bool VideoRecorder::recordVideo(const char* filename) {
     default: width = 640; height = 480;
   }
 
-  uint32_t estimated_frames = RECORD_TIME * FRAME_RATE;
+  uint32_t estimated_frames = recordingTimeSeconds * frameRate;
   Serial.printf(
     "Expected to record about %d frames (%d seconds at %d fps)\n", 
     estimated_frames,
-    RECORD_TIME,
-    FRAME_RATE
+    recordingTimeSeconds,
+    frameRate
   );
 
-  createAviHeader(aviFile, width, height, FRAME_RATE, estimated_frames);
+  createAviHeader(aviFile, width, height, frameRate, estimated_frames);
 
   uint32_t movi_start = aviFile.position() - 4;
   Serial.printf("Movi chunk starts at byte %d\n", movi_start);
@@ -353,20 +322,32 @@ bool VideoRecorder::recordVideo(const char* filename) {
 
   unsigned long startTime = millis();
   unsigned long nextFrameTime = startTime;
-  int frameInterval = 1000 / FRAME_RATE;
+  int frameInterval = 1000 / frameRate;
   uint32_t frameCount = 0;
   uint32_t moviSize = 0;
 
-  uint32_t max_frames = estimated_frames + 10;
+  uint32_t max_frames = estimated_frames + 20;
   uint32_t* frameSizes = (uint32_t*)malloc(max_frames * sizeof(uint32_t));
+
   if (!frameSizes) {
     Serial.println("Failed to allocate memory for frame sizes");
     aviFile.close();
     return false;
   }
 
-  while ((millis() - startTime) < (RECORD_TIME * 1000)) {
-    if (millis() >= nextFrameTime) {
+  unsigned long recordingEndTime = startTime + (recordingTimeSeconds * 1000);
+
+  Serial.printf(
+    "Start time: %lu, End time: %lu, Duration: %d seconds\n",
+    startTime,
+    recordingEndTime,
+    recordingTimeSeconds
+  );
+
+  while (millis() < recordingEndTime) {
+    unsigned long currentTime = millis();
+
+    if (currentTime >= nextFrameTime) {
       camera_fb_t *fb = captureStableFrame();
       if (!fb) {
         Serial.println("Failed to capture frame");
@@ -390,14 +371,16 @@ bool VideoRecorder::recordVideo(const char* filename) {
       esp_camera_fb_return(fb);
       frameCount++;
 
-      maintain_frame_rate(nextFrameTime, frameInterval, frameCount);
+      nextFrameTime += frameInterval;
 
       if (frameCount % 10 == 0) {
+        float elapsedSeconds = (currentTime - startTime) / 1000.0;
         Serial.printf(
-          "Recorded %d frames, %0.1f seconds, avg FPS: %0.1f\n", 
+          "Recorded %d frames, %0.1f seconds, avg FPS: %0.1f (target: %d)\n", 
           frameCount, 
-          (millis() - startTime) / 1000.0,
-          frameCount / ((millis() - startTime) / 1000.0)
+          elapsedSeconds,
+          frameCount / elapsedSeconds,
+          frameRate
         );
         aviFile.flush();
       }
@@ -407,11 +390,12 @@ bool VideoRecorder::recordVideo(const char* filename) {
     }
   }
 
+  float totalElapsedTime = (millis() - startTime) / 1000.0;
   Serial.printf(
     "Recording complete: %d frames in %0.1f seconds (avg %0.1f FPS)\n", 
     frameCount, 
-    (millis() - startTime) / 1000.0,
-    frameCount / ((millis() - startTime) / 1000.0)
+    totalElapsedTime,
+    frameCount / totalElapsedTime
   );
 
   writeIndex(aviFile, frameCount, frameSizes, movi_start);
@@ -429,8 +413,8 @@ bool VideoRecorder::recordVideo(const char* filename) {
   Serial.printf(
     "Recording summary: %d frames in %d seconds (target: %d FPS)\n", 
     frameCount,
-    RECORD_TIME,
-    FRAME_RATE
+    recordingTimeSeconds,
+    frameRate
   );
 
   return true;

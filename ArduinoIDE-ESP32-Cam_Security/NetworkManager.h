@@ -1,8 +1,8 @@
 #ifndef NETWORK_MANAGER_H
 #define NETWORK_MANAGER_H
 
-#include "SDCardManager.h"
 #include <HTTPClient.h>
+#include <SDCardManager.h>
 #include <WiFi.h>
 
 class NetworkManager {
