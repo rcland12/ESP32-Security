@@ -17,10 +17,21 @@ public:
 
   ~NetworkManager();
 
-  bool initWiFi(int maxAttempts = 20);
+  // channel/bssid let a wake skip the full-band scan. Pass 0/nullptr for a
+  // normal scan-and-associate.
+  bool initWiFi(int maxAttempts = 20, uint8_t channel = 0, const uint8_t* bssid = nullptr);
+
+  // Valid only while connected; cache these to speed up the next wake.
+  uint8_t currentChannel() const;
+  const uint8_t* currentBssid() const;
   bool uploadFile(const char* filename);
   bool isWiFiConnected() const;
-  String getIPAddress() const;
+
+  // Reconnects if the association dropped. Without this a single AP reboot
+  // stopped the unit uploading until it was power-cycled by hand.
+  bool ensureConnected(int maxAttempts = 20);
+
+  void disconnect();
 
 private:
   SDCardManager& _sdManager;
@@ -28,8 +39,6 @@ private:
   String _password;
   String _server_url;
   String _camera_id;
-
-  static const int LOCAL_BUFFER_SIZE = 1024;
 };
 
 #endif

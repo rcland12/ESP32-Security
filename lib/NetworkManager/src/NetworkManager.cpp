@@ -16,12 +16,19 @@ NetworkManager::NetworkManager(
 
 NetworkManager::~NetworkManager() {}
 
-bool NetworkManager::initWiFi(int maxAttempts) {
+bool NetworkManager::initWiFi(int maxAttempts, uint8_t channel, const uint8_t* bssid) {
   Serial.println("Initializing WiFi...");
   WiFi.mode(WIFI_STA);
 
-  WiFi.begin(_ssid, _password);
-  Serial.printf("Connecting to %s", _ssid);
+  // Associating with a known channel and BSSID skips scanning every channel,
+  // which is several seconds of radio-on time on every single wake.
+  if (channel != 0 && bssid != nullptr) {
+    Serial.printf("Fast connect: channel %u\n", channel);
+    WiFi.begin(_ssid.c_str(), _password.c_str(), channel, bssid);
+  } else {
+    WiFi.begin(_ssid.c_str(), _password.c_str());
+  }
+  Serial.printf("Connecting to %s", _ssid.c_str());
 
   int attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < maxAttempts) {
@@ -32,7 +39,7 @@ bool NetworkManager::initWiFi(int maxAttempts) {
   Serial.println();
 
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("WiFi Connected!");
+    Serial.printf("WiFi Connected on channel %u\n", WiFi.channel());
     Serial.printf("IP Address: %s\n", WiFi.localIP().toString().c_str());
     return true;
   } else {
@@ -45,8 +52,19 @@ bool NetworkManager::isWiFiConnected() const {
   return WiFi.status() == WL_CONNECTED;
 }
 
-String NetworkManager::getIPAddress() const {
-  return WiFi.localIP().toString();
+bool NetworkManager::ensureConnected(int maxAttempts) {
+  if (isWiFiConnected()) {
+    return true;
+  }
+  Serial.println("WiFi not connected, reconnecting...");
+  return initWiFi(maxAttempts);
+}
+
+void NetworkManager::disconnect() {
+  // Powering the radio down before sleep matters: an associated radio left on
+  // draws far more than the rest of the board does asleep.
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
 }
 
 bool NetworkManager::uploadFile(const char* filename) {
@@ -88,17 +106,27 @@ bool NetworkManager::uploadFile(const char* filename) {
   bool success = false;
   if (httpCode > 0) {
     Serial.printf("HTTP Response code: %d\n", httpCode);
-    if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_CREATED) {
+    // Any 2xx means the server took the file. nginx's DAV module returns 201
+    // when it creates a file but 204 when it overwrites one, so checking only
+    // for 200/201 made every re-upload look like a failure -- the clip would be
+    // kept and retried forever even though the server already had it.
+    if (httpCode >= 200 && httpCode < 300) {
       Serial.println("Upload successful");
       success = true;
     } else {
       Serial.println("Upload failed with HTTP code: " + String(httpCode));
     }
 
-    String response = http.getString();
-    if (response.length() > 0) {
-      Serial.println("Server response: ");
-      Serial.println(response);
+    // Only read a body when one actually exists. A 204 carries no body by
+    // definition, and getString() on it blocks until the socket times out --
+    // that stall was costing ~60 s at full current after every single upload.
+    // Errors are worth the read; successes are not.
+    if (!success && httpCode != HTTP_CODE_NO_CONTENT && http.getSize() != 0) {
+      String response = http.getString();
+      if (response.length() > 0) {
+        Serial.println("Server response: ");
+        Serial.println(response);
+      }
     }
   } else {
     Serial.printf("HTTP request failed: %s\n", http.errorToString(httpCode).c_str());
@@ -108,4 +136,12 @@ bool NetworkManager::uploadFile(const char* filename) {
   uploadFile.close();
   
   return success;
+}
+
+uint8_t NetworkManager::currentChannel() const {
+  return WiFi.channel();
+}
+
+const uint8_t* NetworkManager::currentBssid() const {
+  return WiFi.BSSID();
 }

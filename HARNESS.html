@@ -1,0 +1,845 @@
+<title>ESP32-CAM Harness Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+  :root {
+    --bg:#EDF0EB; --surface:#F8FAF7; --surface-2:#E3E8E1;
+    --ink:#161B17; --ink-2:#4D574F; --ink-3:#7B867D; --rule:#D2D9D1;
+    --accent:#0E7C86; --net-gnd:#333F3A; --net-3v3:#A9640A; --net-vbat:#A5332A;
+    --flag:#F7EDDE; --flag-line:#D8B478;
+    --pcb:#171C18;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0F130F; --surface:#171C18; --surface-2:#202721;
+      --ink:#E5EAE4; --ink-2:#A8B2AA; --ink-3:#7D887F; --rule:#2A322C;
+      --accent:#45C3CD; --net-gnd:#A3AFA7; --net-3v3:#E7A63C; --net-vbat:#E87A6E;
+      --flag:#221B10; --flag-line:#5A4620;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:#0F130F; --surface:#171C18; --surface-2:#202721;
+    --ink:#E5EAE4; --ink-2:#A8B2AA; --ink-3:#7D887F; --rule:#2A322C;
+    --accent:#45C3CD; --net-gnd:#A3AFA7; --net-3v3:#E7A63C; --net-vbat:#E87A6E;
+    --flag:#221B10; --flag-line:#5A4620;
+  }
+
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Source Serif 4",Georgia,serif; font-size:17px; line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap { max-width:1140px; margin:0 auto; padding:56px 28px 120px; }
+  .col { max-width:68ch; }
+
+  h1,h2,h3 { font-family:Archivo,"Helvetica Neue",sans-serif; text-wrap:balance; margin:0; }
+  h1 { font-size:clamp(34px,5.2vw,52px); font-weight:700; letter-spacing:-0.022em; line-height:1.05; }
+  h2 { font-size:27px; font-weight:600; letter-spacing:-0.012em; margin:0 0 6px; }
+  h3 { font-size:18px; font-weight:600; letter-spacing:-0.004em; margin:34px 0 6px; }
+  p { margin:0 0 18px; }
+  a { color:var(--accent); }
+
+  .kicker {
+    font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600;
+    letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-3);
+  }
+  .lede { font-size:20px; color:var(--ink-2); margin-top:18px; }
+  header.top { border-bottom:2px solid var(--ink); padding-bottom:34px; margin-bottom:12px; }
+
+  section { padding-top:46px; }
+  .sec-head { display:flex; align-items:baseline; gap:16px; border-top:1px solid var(--rule); padding-top:16px; margin-bottom:20px; }
+  .sec-num {
+    font-family:"JetBrains Mono",monospace; font-size:12px; font-weight:600; color:var(--accent);
+    letter-spacing:0.1em; flex:none; padding-top:4px;
+  }
+
+  code,.mono { font-family:"JetBrains Mono",monospace; font-size:0.86em; }
+  code { background:var(--surface-2); padding:1px 5px; border-radius:4px; }
+
+  figure { margin:34px 0 12px; }
+  .fig-svg { width:100%; height:auto; display:block; }
+  .fig-box { background:var(--surface); border:1px solid var(--rule); border-radius:12px; padding:22px 20px 12px; overflow-x:auto; }
+  figcaption { font-size:14.5px; color:var(--ink-2); margin-top:14px; max-width:74ch; }
+  figcaption b { color:var(--ink); font-weight:600; }
+
+  /* svg text classes */
+  .bx-t { font-family:Archivo,sans-serif; font-size:16px; font-weight:600; fill:var(--ink); text-anchor:middle; }
+  .bx-s { font-family:"JetBrains Mono",monospace; font-size:12px; fill:var(--ink-2); text-anchor:middle; }
+  .bx-s2 { font-family:"JetBrains Mono",monospace; font-size:13px; font-weight:600; fill:var(--ink); text-anchor:middle; }
+  .bx-m { font-family:"JetBrains Mono",monospace; font-size:11px; fill:var(--ink-3); text-anchor:middle; }
+  .ar { font-family:"JetBrains Mono",monospace; font-size:11px; fill:var(--ink-2); }
+  .sub { font-size:8px; }
+  .bb-num { font-family:"JetBrains Mono",monospace; font-size:11px; fill:var(--ink-3); text-anchor:middle; }
+  .bb-net { font-family:"JetBrains Mono",monospace; font-size:11.5px; font-weight:600; text-anchor:middle; }
+  .bb-lab { font-family:"JetBrains Mono",monospace; font-size:12.5px; font-weight:600; }
+  .bb-part { font-family:"JetBrains Mono",monospace; font-size:11px; fill:var(--ink-2); text-anchor:middle; }
+  .bb-pin { font-family:"JetBrains Mono",monospace; font-size:10px; font-weight:600; fill:var(--ink-3); text-anchor:middle; }
+  .bb-pol { font-family:Archivo,sans-serif; font-size:15px; font-weight:700; fill:var(--ink-2); text-anchor:middle; }
+  .chip-t { font-family:"JetBrains Mono",monospace; font-size:10px; font-weight:600; fill:var(--ink-2); text-anchor:middle; }
+  .silk { font-family:Archivo,sans-serif; font-size:17px; font-weight:600; fill:#EAEEE8; text-anchor:middle; }
+  .silk-s { font-family:Archivo,sans-serif; font-size:12px; font-weight:600; fill:#EAEEE8; text-anchor:middle; letter-spacing:0.06em; }
+  .silk-b { font-family:Archivo,sans-serif; font-size:20px; font-weight:700; fill:#2C332D; text-anchor:middle; }
+  .cl { font-family:"JetBrains Mono",monospace; font-size:12.5px; font-weight:600; fill:var(--ink); }
+  .cl-s { font-family:"JetBrains Mono",monospace; font-size:11.5px; fill:var(--ink-3); }
+
+  table { border-collapse:collapse; width:100%; font-family:"JetBrains Mono",monospace; font-size:13px; margin:8px 0 24px; }
+  th,td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--rule); vertical-align:top; }
+  th { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-3); font-weight:600; border-bottom:1.5px solid var(--ink-3); }
+  td.hole { font-weight:600; white-space:nowrap; }
+  .tbl-wrap { overflow-x:auto; }
+  tr.gnd td.hole { color:var(--net-gnd); }
+  tr.v33 td.hole { color:var(--net-3v3); }
+  tr.sig td.hole { color:var(--accent); }
+
+  .flag { background:var(--flag); border-left:3px solid var(--flag-line); padding:16px 20px; margin:24px 0; border-radius:0 8px 8px 0; }
+  .flag p:last-child { margin-bottom:0; }
+  .flag .kicker { color:var(--flag-line); display:block; margin-bottom:6px; }
+
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin:26px 0 8px; }
+  .card { background:var(--surface); border:1px solid var(--rule); border-radius:10px; padding:16px 18px; }
+  .card .kicker { display:block; margin-bottom:7px; }
+  .card p { margin:0; font-size:15px; line-height:1.5; }
+  .card strong { font-family:Archivo,sans-serif; font-size:16px; display:block; margin-bottom:4px; }
+
+  ol.steps { list-style:none; counter-reset:s; padding:0; margin:12px 0 0; max-width:72ch; }
+  ol.steps > li { counter-increment:s; position:relative; padding:0 0 22px 52px; border-left:1px solid var(--rule); margin-left:14px; }
+  ol.steps > li::before {
+    content:counter(s,decimal-leading-zero); position:absolute; left:-15px; top:-2px;
+    font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:600; color:var(--accent);
+    background:var(--bg); padding:2px 0; width:30px; text-align:center;
+  }
+  ol.steps > li:last-child { border-left-color:transparent; }
+  ol.steps h3 { margin:0 0 4px; }
+  ol.steps p { margin:0 0 10px; font-size:16px; }
+
+  ul.tight { margin:0 0 18px; padding-left:20px; }
+  ul.tight li { margin-bottom:7px; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:18px; margin:0 0 4px; font-family:"JetBrains Mono",monospace; font-size:11.5px; color:var(--ink-2); }
+  .legend span { display:flex; align-items:center; gap:7px; }
+  .swatch { width:14px; height:14px; border-radius:3px; flex:none; }
+
+  @media (max-width:640px) { .wrap { padding:36px 18px 80px; } body { font-size:16px; } }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <div class="kicker">Bench build &#183; ESP32-CAM security node</div>
+  <h1 class="col">Harness plan for the<br>buck&#8211;boost and breadboard</h1>
+  <p class="lede col">Four wires off the TPS63020, six off the breadboard, one solder jumper moved.
+  Everything below is laid out so you can solder the module today and still pull the whole
+  circuit apart tomorrow.</p>
+</header>
+
+<section>
+  <div class="sec-head"><div class="sec-num">ANSWERS</div><div><h2>The four decisions, up front</h2></div></div>
+  <div class="cards">
+    <div class="card">
+      <span class="kicker">Standoff</span>
+      <strong>Printed ledges</strong>
+      <p>The ESP32-CAM has no mounting holes. A &#8220;standoff&#8221; here is a pair of moulded ledges the board rests on, not a screw post.</p>
+    </div>
+    <div class="card">
+      <span class="kicker">Far end of the wires</span>
+      <strong>Depends per wire</strong>
+      <p>Battery side: stranded &#8594; polarized plug. Output side: <em>solid core</em>, bare, straight into the breadboard.</p>
+    </div>
+    <div class="card">
+      <span class="kicker">One rail, two loads</span>
+      <strong>Yes &#8212; both</strong>
+      <p>3.30&#160;V feeds the ESP32&#8209;CAM&#8217;s 3V3 pin and the AM312 together. That is the whole point of the AM312.</p>
+    </div>
+    <div class="card">
+      <span class="kicker">Pins into the breadboard</span>
+      <strong>Don&#8217;t</strong>
+      <p>It would eat four of your seventeen columns and bolt the module&#8217;s position to the breadboard. Wires give you the same reversibility with none of that.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="sec-num">01</div><div><h2>What I meant by standoffs</h2></div></div>
+  <div class="col">
+  <p>A standoff is just a spacer that holds a board off whatever is behind it &#8212; normally a threaded
+  pillar you bolt through the PCB&#8217;s mounting holes. I used the word loosely, and it&#8217;s worth being
+  precise now that you&#8217;re building: <b>the AI-Thinker ESP32-CAM has no mounting holes.</b> Look at
+  <code>images/esp32_back.jpeg</code> &#8212; it&#8217;s a bare rectangle with headers down both long edges and
+  nothing to screw into.</p>
+  <p>So in this housing the standoff is a <b>printed feature</b>: two ledges moulded into the shell that
+  the board&#8217;s long edges sit on, with a clip or the closing lid holding it down. The job is the same
+  as a screw standoff &#8212; keep the solder side off the plastic, leave room for the dupont shells, let
+  air move &#8212; it&#8217;s just done with geometry instead of hardware.</p>
+  </div>
+
+  <figure>
+    <div class="fig-box"><svg viewBox="0 0 700 280" role="img" class="fig-svg"
+     aria-label="Cross-section of the camera head: the ESP32-CAM rests on two printed ledges moulded into the housing wall, held down by a printed clip, with a gap underneath for solder tails and the sideways-routed dupont shells, and the antenna end left clear of plastic.">
+  <rect x="60" y="210" width="580" height="26" rx="4" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.6"/>
+  <text x="350" y="256" class="cl-s" text-anchor="middle">printed housing wall</text>
+
+  <path d="M150,210 L150,150 L188,150 L188,162 L166,162 L166,210 Z" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.6"/>
+  <path d="M520,210 L520,150 L482,150 L482,162 L504,162 L504,210 Z" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.6"/>
+
+  <rect x="160" y="138" width="350" height="12" rx="2" fill="var(--ink)" />
+  <rect x="250" y="112" width="80" height="26" rx="3" fill="var(--ink-2)"/>
+  <rect x="360" y="118" width="46" height="20" rx="3" fill="var(--ink-2)"/>
+  <text x="512" y="104" class="cl-s" text-anchor="end" fill="var(--ink-2)">ESP32&#8209;CAM &#8212; no mounting holes anywhere on it</text>
+
+  <path d="M160,150 L120,150 L120,168 L160,168" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+  <text x="112" y="164" class="cl-s" text-anchor="end" fill="var(--accent)">dupont shell,<tspan x="112" dy="15">routed sideways</tspan></text>
+
+  <g stroke="var(--net-3v3)" stroke-width="1.6">
+    <path d="M336,152 L336,208"/>
+    <path d="M330,152 L342,152"/><path d="M330,208 L342,208"/>
+  </g>
+  <text x="348" y="184" class="cl" fill="var(--net-3v3)">6&#8211;8 mm of air</text>
+
+  <path d="M510,138 A46,46 0 0 1 556,184" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 5"/>
+  <text x="566" y="150" class="cl-s" fill="var(--accent)">antenna end:<tspan x="566" dy="15">15&#8211;20 mm clear</tspan></text>
+
+  <text x="60" y="42" class="cl" fill="var(--ink-2)">&#8220;Standoff&#8221; here = these two printed ledges.</text>
+  <text x="60" y="61" class="cl-s">Not screw posts &#8212; there is nothing to screw into.</text>
+</svg></div>
+    <figcaption>The gap under the board is the whole reason the feature exists. Budget <b>6&#8211;8&#160;mm</b>:
+    the header solder tails stick down ~2&#160;mm, and the dupont shells need to exit sideways into a
+    channel rather than straight back. The ledges must also stop short of the antenna end &#8212; plastic
+    touching that meander is what killed range on the last enclosure.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head"><div class="sec-num">02</div><div><h2>Should the breadboard live in the housing?</h2></div></div>
+  <div class="col">
+  <p>Yes, with one rule and one plan.</p>
+  <p><b>The rule: the battery never touches the breadboard.</b> Four 18650s in parallel will pour a
+  hundred-plus amps into a short, and a spring contact is exactly the wrong thing to have in that path.
+  Battery goes to the module&#8217;s VIN pads directly, through a fuse and a polarized plug, and stops
+  there. Only the regulated 3.3&#160;V side ever reaches the breadboard.</p>
+  <p><b>The plan: treat it as a layout you will later transfer.</b> A solderless contact is a spring
+  and a bit of oxide, and the failure mode it produces &#8212; a momentary open during a 300&#160;mA WiFi
+  burst &#8212; looks exactly like the brownout symptoms you&#8217;ve already been chasing: camera init
+  failures and SD corruption, intermittent, in a unit bolted to a wall. Indoors, with no vibration and
+  no thermal cycling, it will probably be fine for a long time. But when the layout below is proven,
+  move it onto a <em>breadboard-pattern proto PCB</em> &#8212; a permanent board with the identical
+  five-hole column pattern. The layout transfers hole-for-hole with no redesign, and the contacts
+  become solder.</p>
+  <p>That also settles the prototyping worry. Solid-core wire ends plug into a breadboard <em>and</em>
+  solder into a proto board. Nothing you do today closes a door.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="sec-num">03</div><div><h2>The whole chain</h2></div></div>
+  <figure>
+    <div class="fig-box">
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--net-vbat)"></i>battery, unregulated</span>
+        <span><i class="swatch" style="background:var(--net-3v3)"></i>3.30&#160;V regulated</span>
+        <span><i class="swatch" style="background:var(--net-gnd)"></i>ground</span>
+        <span><i class="swatch" style="background:var(--accent)"></i>signal</span>
+      </div>
+      <svg viewBox="0 0 1000 400" role="img" class="fig-svg"
+     aria-label="Block diagram: a four-cell parallel 18650 pack feeds a fused polarized connector into the TPS63020 buck-boost, whose 3.3 volt output feeds the breadboard rails; the rails power both the ESP32-CAM and the AM312 PIR, and the PIR output passes through an NPN inverter on the same breadboard before reaching GPIO 13.">
+  <defs>
+    <marker id="ar-bat" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--net-vbat)"/></marker>
+    <marker id="ar-33" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--net-3v3)"/></marker>
+    <marker id="ar-sig" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+  </defs>
+
+  <rect x="10" y="60" width="170" height="100" rx="8" fill="var(--surface)" stroke="var(--net-vbat)" stroke-width="2"/>
+  <text x="95" y="96" class="bx-t">Battery sled</text>
+  <text x="95" y="120" class="bx-s">4 &#215; 18650 parallel</text>
+  <text x="95" y="140" class="bx-m">4.1 V today</text>
+
+  <rect x="250" y="60" width="190" height="100" rx="8" fill="var(--surface)" stroke="var(--net-3v3)" stroke-width="2"/>
+  <text x="345" y="96" class="bx-t">TPS63020</text>
+  <text x="345" y="120" class="bx-s">3V3 jumper</text>
+  <text x="345" y="140" class="bx-m">bucks at 4.2, boosts at 3.0</text>
+
+  <rect x="500" y="30" width="250" height="310" rx="8" fill="var(--surface)" stroke="var(--rule)" stroke-width="2"/>
+  <text x="625" y="58" class="bx-t">170&#8209;point breadboard</text>
+  <rect x="520" y="72" width="210" height="86" rx="6" fill="var(--bg)" stroke="var(--rule)"/>
+  <text x="625" y="98" class="bx-s2">col 1 &#8212; GND net</text>
+  <text x="625" y="120" class="bx-s2">col 3 &#8212; 3V3 net</text>
+  <text x="625" y="142" class="bx-m">1000 &#181;F + 100 nF across them</text>
+  <rect x="520" y="204" width="210" height="112" rx="6" fill="var(--bg)" stroke="var(--rule)"/>
+  <text x="625" y="230" class="bx-s2">NPN inverter</text>
+  <text x="625" y="252" class="bx-m">cols 6&#8211;10, top half</text>
+  <text x="625" y="274" class="bx-m">2N3904 + 2 &#215; 10 k</text>
+  <text x="625" y="298" class="bx-m">idle HIGH, motion LOW</text>
+
+  <rect x="810" y="50" width="180" height="120" rx="8" fill="var(--surface)" stroke="var(--rule)" stroke-width="2"/>
+  <text x="900" y="84" class="bx-t">ESP32&#8209;CAM</text>
+  <text x="900" y="107" class="bx-s">3V3 pin, not 5V</text>
+  <text x="900" y="128" class="bx-m">AMS1117 bypassed</text>
+  <text x="900" y="150" class="bx-m">GPIO 13 = ext0 wake</text>
+
+  <rect x="810" y="230" width="180" height="100" rx="8" fill="var(--surface)" stroke="var(--rule)" stroke-width="2"/>
+  <text x="900" y="264" class="bx-t">AM312 PIR</text>
+  <text x="900" y="287" class="bx-s">2.7&#8211;12 V, ~12 &#181;A</text>
+  <text x="900" y="308" class="bx-m">push&#8209;pull, ~2 s pulse</text>
+
+  <g stroke-width="2.4" fill="none">
+    <path d="M180,110 L242,110" stroke="var(--net-vbat)" marker-end="url(#ar-bat)"/>
+    <path d="M440,110 L492,110" stroke="var(--net-3v3)" marker-end="url(#ar-33)"/>
+    <path d="M750,95 L802,95" stroke="var(--net-3v3)" marker-end="url(#ar-33)"/>
+    <path d="M750,130 L770,130 L770,272 L802,272" stroke="var(--net-3v3)" marker-end="url(#ar-33)"/>
+    <path d="M810,300 L756,300" stroke="var(--accent)" marker-end="url(#ar-sig)"/>
+    <path d="M750,220 L788,220 L788,190 L900,190 L900,178" stroke="var(--accent)" marker-end="url(#ar-sig)"/>
+  </g>
+
+  <text x="212" y="98" class="ar" text-anchor="middle">3.0&#8211;4.2 V</text>
+  <text x="212" y="132" class="ar" text-anchor="middle">fused</text>
+  <text x="466" y="98" class="ar" text-anchor="middle">3.30 V</text>
+  <text x="778" y="84" class="ar" text-anchor="middle">3V3&#183;GND</text>
+  <text x="782" y="262" class="ar" text-anchor="middle">3V3&#183;GND</text>
+  <text x="784" y="292" class="ar" text-anchor="middle">OUT</text>
+  <text x="828" y="182" class="ar" text-anchor="middle">GPIO 13</text>
+</svg>
+    </div>
+    <figcaption>Six wires leave the breadboard: three to the ESP32-CAM (3V3, GND, GPIO&#160;13) and
+    three to the PIR (VCC, GND, OUT). The inverter sits between the PIR and GPIO&#160;13 because
+    <b>GPIO&#160;13 is also SD_MMC D3</b> &#8212; a card that samples D3 low while mounting comes up in SPI
+    mode and <code>SD_MMC.begin()</code> fails with <code>0x107</code>. The inverter makes the pin idle
+    HIGH, which is what the firmware expects (<code>MOTION_ACTIVE_LEVEL = 0</code>).</figcaption>
+  </figure>
+</section>
+
+<section>
+  <div class="sec-head"><div class="sec-num">04</div><div><h2>The buck&#8211;boost: which hole, which wire</h2></div></div>
+  <figure>
+    <div class="fig-box"><svg viewBox="0 0 1000 440" role="img" class="fig-svg"
+     aria-label="Pad map of the TPS63020 buck-boost module: GND and VIN on the left edge fed by stranded wire from the fused battery connector, GND and OUT on the right edge feeding solid-core wire to the breadboard, and the three output-select solder jumpers with 5V to be removed and 3V3 to be bridged.">
+  <rect x="340" y="110" width="320" height="215" rx="10" fill="#171C18" stroke="var(--rule)" stroke-width="1.5"/>
+  <rect x="360" y="140" width="72" height="72" rx="6" fill="#B9BDB6" stroke="#7E837C"/>
+  <text x="396" y="184" class="silk-b">1R5</text>
+  <text x="530" y="152" class="silk">TPS63020</text>
+  <text x="530" y="174" class="silk">BUCK&#8211;BOOST</text>
+
+  <rect x="326" y="128" width="40" height="48" rx="4" fill="#D8D2C4" stroke="#8A8578" stroke-width="1"/><circle cx="346" cy="142" r="6" fill="#171C18"/><circle cx="346" cy="162" r="6" fill="#171C18"/><rect x="326" y="262" width="40" height="48" rx="4" fill="#D8D2C4" stroke="#8A8578" stroke-width="1"/><circle cx="346" cy="276" r="6" fill="#171C18"/><circle cx="346" cy="296" r="6" fill="#171C18"/><rect x="634" y="128" width="40" height="48" rx="4" fill="#D8D2C4" stroke="#8A8578" stroke-width="1"/><circle cx="654" cy="142" r="6" fill="#171C18"/><circle cx="654" cy="162" r="6" fill="#171C18"/><rect x="634" y="262" width="40" height="48" rx="4" fill="#D8D2C4" stroke="#8A8578" stroke-width="1"/><circle cx="654" cy="276" r="6" fill="#171C18"/><circle cx="654" cy="296" r="6" fill="#171C18"/>
+  <text x="372" y="127" class="silk-s" style="text-anchor:start">GND</text>
+  <text x="372" y="236" class="silk-s" style="text-anchor:start">VIN</text>
+  <text x="628" y="127" class="silk-s" style="text-anchor:end">GND</text>
+  <text x="628" y="236" class="silk-s" style="text-anchor:end">OUT</text>
+
+  <!-- jumpers -->
+  <g>
+    <rect x="452" y="252" width="13" height="17" fill="#C9CEC6"/><rect x="471" y="252" width="13" height="17" fill="#C9CEC6"/>
+    <rect x="452" y="272" width="13" height="17" fill="#C9CEC6"/><rect x="471" y="272" width="13" height="17" fill="#C9CEC6"/>
+    <rect x="450" y="250" width="36" height="41" rx="4" fill="var(--net-3v3)" opacity="0.55"/>
+    <text x="468" y="312" class="silk-s">3V3</text>
+
+    <rect x="512" y="252" width="13" height="17" fill="#C9CEC6"/><rect x="531" y="252" width="13" height="17" fill="#C9CEC6"/>
+    <rect x="512" y="272" width="13" height="17" fill="#C9CEC6"/><rect x="531" y="272" width="13" height="17" fill="#C9CEC6"/>
+    <text x="528" y="312" class="silk-s">4V2</text>
+
+    <rect x="572" y="252" width="13" height="17" fill="#C9CEC6"/><rect x="591" y="252" width="13" height="17" fill="#C9CEC6"/>
+    <rect x="572" y="272" width="13" height="17" fill="#C9CEC6"/><rect x="591" y="272" width="13" height="17" fill="#C9CEC6"/>
+    <circle cx="588" cy="292" r="9" fill="#9AA0A6"/>
+    <g stroke="var(--net-vbat)" stroke-width="3" stroke-linecap="round">
+      <path d="M566,242 L610,298"/><path d="M610,242 L566,298"/>
+    </g>
+    <text x="588" y="312" class="silk-s">5V</text>
+  </g>
+
+  <g stroke-width="2.2" fill="none">
+    <path d="M330,152 L250,152" stroke="var(--net-gnd)"/>
+    <path d="M330,286 L250,286" stroke="var(--net-vbat)"/>
+    <path d="M670,152 L750,152" stroke="var(--net-gnd)"/>
+    <path d="M670,286 L750,286" stroke="var(--net-3v3)"/>
+  </g>
+
+  <text x="242" y="141" class="cl" text-anchor="end" fill="var(--net-gnd)">black, stranded 22 AWG</text>
+  <text x="242" y="160" class="cl-s" text-anchor="end">&#8594; battery &#8722; (via polarized plug)</text>
+  <text x="242" y="275" class="cl" text-anchor="end" fill="var(--net-vbat)">red, stranded 22 AWG</text>
+  <text x="242" y="294" class="cl-s" text-anchor="end">&#8594; 1 A fuse &#8594; battery +</text>
+  <text x="758" y="141" class="cl" fill="var(--net-gnd)">black, 22 AWG SOLID core</text>
+  <text x="758" y="160" class="cl-s">&#8594; breadboard hole A1</text>
+  <text x="758" y="275" class="cl" fill="var(--net-3v3)">red, 22 AWG SOLID core</text>
+  <text x="758" y="294" class="cl-s">&#8594; breadboard hole A3</text>
+
+  <path d="M480,352 L480,330" stroke="var(--net-3v3)" stroke-width="2" fill="none"/>
+  <text x="480" y="372" class="cl" fill="var(--net-3v3)" text-anchor="middle">BRIDGE THIS</text>
+  <path d="M588,352 L588,336" stroke="var(--net-vbat)" stroke-width="2" fill="none"/>
+  <text x="600" y="372" class="cl" fill="var(--net-vbat)" text-anchor="start">WICK THIS OFF</text>
+
+  <text x="500" y="404" class="cl-s" text-anchor="middle">Second hole of every corner pad stays empty &#8212; same net, keep it as a meter probe point.</text>
+</svg></div>
+    <figcaption>Wire type is not cosmetic here. <b>Stranded</b> on the battery side because that
+    connector will be unplugged hundreds of times and solid core work-hardens and snaps.
+    <b>Solid core</b> on the output side because that is what a breadboard clip is designed to grip &#8212;
+    tinned stranded goes soft, frays, and slowly wrecks the contacts.</figcaption>
+  </figure>
+
+  <div class="col">
+  <p>Strip 3&#160;mm, twist, tin the wire, tin the pad, then reflow the two together at about
+  350&#160;&#176;C with flux. Bring all four wires out of whichever face will <em>not</em> sit against the
+  printed ledges. Once you&#8217;ve tested it, a blob of hot glue over the four wire entries is your strain
+  relief &#8212; those pads lift if a wire gets tugged.</p>
+  </div>
+
+  <div class="flag col">
+    <span class="kicker">Before the iron touches anything</span>
+    <p>Connect the pack to VIN/GND with nothing else attached and measure OUT&#8594;GND. That tells you
+    what&#8217;s <em>actually</em> bridged. I can see a solder blob at the 5V position in your photo, which
+    matches what you assumed, but the image isn&#8217;t sharp enough for me to call it &#8212; and the meter
+    settles it in five seconds.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="sec-num">05</div><div><h2>The breadboard map</h2></div></div>
+  <div class="col">
+  <p>A 170-point mini board is 17 columns of 5 holes on each side of the channel, and
+  <em>no</em> dedicated power rails &#8212; so a &#8220;rail&#8221; here is a column, and it only has five
+  holes. That&#8217;s not enough for ground, so column&#160;1 is bridged across the channel with a single
+  jumper (E1&#8211;G1), turning both halves into one 8-hole node. Column&#160;3 gets the same treatment
+  for 3V3.</p>
+  <p>Everything else follows from keeping the two long runs out of each other&#8217;s way: the pull-up
+  lives in row&#160;B, the emitter jumper in row&#160;D, the base resistor in row&#160;E. No two spans
+  share a row.</p>
+  </div>
+
+  <figure>
+    <div class="fig-box"><svg viewBox="0 0 940 600" role="img" class="fig-svg"
+     aria-label="Map of a 170-point mini breadboard showing column 1 used as the ground net, column 3 as the 3.3 volt net, the NPN inverter built across columns 6 to 10 in the top half, and the six external wires entering from the top and left edges.">
+  <!-- board -->
+  <rect x="282" y="182" width="516" height="336" rx="10" fill="var(--surface)" stroke="var(--rule)" stroke-width="1.5"/>
+  <rect x="282" y="334" width="516" height="32" fill="var(--bg)" stroke="var(--rule)" stroke-width="1"/>
+
+  <!-- net bands -->
+  <rect x="286" y="188" width="28" height="144" rx="8" fill="var(--net-gnd)" opacity="0.10"/>
+  <rect x="286" y="368" width="28" height="144" rx="8" fill="var(--net-gnd)" opacity="0.10"/>
+  <rect x="346" y="188" width="28" height="144" rx="8" fill="var(--net-3v3)" opacity="0.13"/>
+  <rect x="346" y="368" width="28" height="144" rx="8" fill="var(--net-3v3)" opacity="0.13"/>
+
+  <!-- holes -->
+  <circle cx="300" cy="200" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="330" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="200" r="5.2" fill="var(--net-3v3)"/>
+      <circle cx="390" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="200" r="5.2" fill="var(--accent)"/>
+      <circle cx="480" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="540" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="570" cy="200" r="5.2" fill="var(--accent)"/>
+      <circle cx="600" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="200" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="330" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="230" r="5.2" fill="var(--net-3v3)"/>
+      <circle cx="390" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="480" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="540" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="570" cy="230" r="5.2" fill="var(--accent)"/>
+      <circle cx="600" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="230" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="260" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="330" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="260" r="5.2" fill="var(--net-3v3)"/>
+      <circle cx="390" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="480" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="260" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="540" cy="260" r="5.2" fill="var(--accent)"/>
+      <circle cx="570" cy="260" r="5.2" fill="var(--accent)"/>
+      <circle cx="600" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="260" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="290" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="330" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="390" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="480" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="290" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="540" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="570" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="600" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="290" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="320" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="330" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="320" r="5.2" fill="var(--net-3v3)"/>
+      <circle cx="390" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="320" r="5.2" fill="var(--accent)"/>
+      <circle cx="480" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="540" cy="320" r="5.2" fill="var(--accent)"/>
+      <circle cx="570" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="600" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="320" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="380" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="330" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="380" r="5.2" fill="var(--net-3v3)"/>
+      <circle cx="390" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="480" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="540" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="570" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="600" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="380" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="410" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="330" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="410" r="5.2" fill="var(--net-3v3)"/>
+      <circle cx="390" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="480" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="540" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="570" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="600" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="410" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="440" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="330" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="440" r="5.2" fill="var(--net-3v3)"/>
+      <circle cx="390" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="480" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="540" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="570" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="600" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="440" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="470" r="5.2" fill="var(--net-gnd)"/>
+      <circle cx="330" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="470" r="5.2" fill="var(--net-3v3)"/>
+      <circle cx="390" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="480" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="540" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="570" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="600" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="470" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="300" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="330" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="360" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="390" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="420" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="450" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="480" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="510" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="540" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="570" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="600" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="630" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="660" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="690" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="720" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="750" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+      <circle cx="780" cy="500" r="4.2" fill="none" stroke="var(--rule)" stroke-width="1.4"/>
+
+  <!-- bridges across the channel -->
+  <path d="M300,320 Q286,365 300,410" stroke="var(--net-gnd)" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+  <path d="M360,320 Q390,365 360,410" stroke="var(--net-3v3)" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+
+  <!-- 10k pull-up, B3 to B10 -->
+  <path d="M360,230 L394,230 M480,230 L570,230" stroke="var(--ink-2)" stroke-width="2.4" fill="none"/>
+  <rect x="394" y="221" width="86" height="18" rx="4" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.6"/>
+  <text x="437" y="234" class="bb-part">10 k pull-up</text>
+
+  <!-- transistor at C8 C9 C10 -->
+  <path d="M494,274 A26,26 0 0 1 546,274 Z" fill="var(--surface)" fill-opacity="0.55" stroke="var(--ink)" stroke-width="1.8"/>
+  <text x="510" y="244" class="bb-pin">E</text>
+  <text x="540" y="244" class="bb-pin">B</text>
+  <text x="570" y="244" class="bb-pin">C</text>
+  <path d="M604,248 L552,258" stroke="var(--ink-3)" stroke-width="1.2" fill="none"/>
+  <g><rect x="606" y="239" width="186" height="18" rx="4" fill="var(--surface)" stroke="var(--rule)"/><text x="699" y="252" class="chip-t">2N3904 &#183; flat side to channel</text></g>
+
+  <!-- emitter jumper D1 to D8 -->
+  <path d="M300,290 Q405.0,274 510,290" stroke="var(--net-gnd)" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+  <g><rect x="370" y="296" width="96" height="18" rx="4" fill="var(--surface)" stroke="var(--rule)"/><text x="418" y="309" class="chip-t">emitter &#8594; GND</text></g>
+
+  <!-- base resistor E6 to E9 -->
+  <path d="M450,320 L466,320 M524,320 L540,320" stroke="var(--ink-2)" stroke-width="2.4" fill="none"/>
+  <rect x="466" y="311" width="58" height="18" rx="4" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.6"/>
+  <text x="495.0" y="324" class="bb-part">10 k</text>
+
+  <!-- 1000 uF at C1-C3, stripe on the ground side -->
+  <rect x="284" y="245" width="92" height="30" rx="6" fill="none" stroke="var(--ink-2)" stroke-width="1.4"/>
+  <rect x="284" y="245" width="9" height="30" rx="3" fill="var(--ink-2)"/>
+  <g><rect x="386" y="251" width="74" height="18" rx="4" fill="var(--surface)" stroke="var(--rule)"/><text x="423" y="264" class="chip-t">1000 &#181;F</text></g>
+
+  <!-- 100 nF at F1-F3 -->
+  <rect x="288" y="369" width="84" height="22" rx="4" fill="none" stroke="var(--ink-2)" stroke-width="1.4"/>
+  <g><rect x="386" y="371" width="66" height="18" rx="4" fill="var(--surface)" stroke="var(--rule)"/><text x="419" y="384" class="chip-t">100 nF</text></g>
+
+  <!-- node captions, parked in the empty channel with ticks up to their columns -->
+  <g stroke="var(--ink-3)" stroke-width="1.2">
+    <path d="M450,336 L450,326"/>
+    <path d="M540,336 L540,326"/>
+    <path d="M600,336 L570,326"/>
+  </g>
+  <g><rect x="420" y="336" width="60" height="18" rx="4" fill="var(--surface)" stroke="var(--rule)"/><text x="450" y="349" class="chip-t">PIR OUT</text></g>
+  <g><rect x="518" y="336" width="44" height="18" rx="4" fill="var(--surface)" stroke="var(--rule)"/><text x="540" y="349" class="chip-t">BASE</text></g>
+  <g><rect x="560" y="336" width="80" height="18" rx="4" fill="var(--surface)" stroke="var(--rule)"/><text x="600" y="349" class="chip-t">COLLECTOR</text></g>
+
+  <!-- top leaders -->
+  <g stroke-width="2.2" fill="none" stroke-linecap="round">
+    <path d="M300,190 L300,140 L250,120" stroke="var(--net-gnd)"/>
+    <path d="M360,190 L360,105 L300,85" stroke="var(--net-3v3)"/>
+    <path d="M450,190 L450,140 L520,120" stroke="var(--accent)"/>
+    <path d="M570,190 L570,105 L620,85" stroke="var(--accent)"/>
+  </g>
+  <text x="244" y="124" class="bb-lab" text-anchor="end" fill="var(--net-gnd)">buck GND (out side) &#183; black solid</text>
+  <text x="294" y="89" class="bb-lab" text-anchor="end" fill="var(--net-3v3)">buck OUT &#183; red solid core</text>
+  <text x="528" y="124" class="bb-lab" fill="var(--accent)">AM312 OUT</text>
+  <text x="628" y="89" class="bb-lab" fill="var(--accent)">ESP32&#8209;CAM GPIO 13</text>
+
+  <!-- left leaders -->
+  <g stroke-width="2.2" fill="none" stroke-linecap="round">
+    <path d="M300,440 L274,432 L248,432" stroke="var(--net-gnd)"/>
+    <path d="M360,440 L336,462 L248,462" stroke="var(--net-3v3)"/>
+    <path d="M300,470 L274,492 L248,492" stroke="var(--net-gnd)"/>
+    <path d="M360,470 L336,522 L248,522" stroke="var(--net-3v3)"/>
+  </g>
+  <text x="240" y="436" class="bb-lab" text-anchor="end" fill="var(--net-gnd)">ESP32&#8209;CAM GND</text>
+  <text x="240" y="466" class="bb-lab" text-anchor="end" fill="var(--net-3v3)">ESP32&#8209;CAM 3V3</text>
+  <text x="240" y="496" class="bb-lab" text-anchor="end" fill="var(--net-gnd)">AM312 GND</text>
+  <text x="240" y="526" class="bb-lab" text-anchor="end" fill="var(--net-3v3)">AM312 VCC</text>
+
+  <text x="300" y="540" class="bb-num">1</text>
+      <text x="330" y="540" class="bb-num">2</text>
+      <text x="360" y="540" class="bb-num">3</text>
+      <text x="390" y="540" class="bb-num">4</text>
+      <text x="420" y="540" class="bb-num">5</text>
+      <text x="450" y="540" class="bb-num">6</text>
+      <text x="480" y="540" class="bb-num">7</text>
+      <text x="510" y="540" class="bb-num">8</text>
+      <text x="540" y="540" class="bb-num">9</text>
+      <text x="570" y="540" class="bb-num">10</text>
+      <text x="600" y="540" class="bb-num">11</text>
+      <text x="630" y="540" class="bb-num">12</text>
+      <text x="660" y="540" class="bb-num">13</text>
+      <text x="690" y="540" class="bb-num">14</text>
+      <text x="720" y="540" class="bb-num">15</text>
+      <text x="750" y="540" class="bb-num">16</text>
+      <text x="780" y="540" class="bb-num">17</text>
+  <text x="812" y="204" class="bb-num" style="text-anchor:start">A</text>
+      <text x="812" y="234" class="bb-num" style="text-anchor:start">B</text>
+      <text x="812" y="264" class="bb-num" style="text-anchor:start">C</text>
+      <text x="812" y="294" class="bb-num" style="text-anchor:start">D</text>
+      <text x="812" y="324" class="bb-num" style="text-anchor:start">E</text>
+      <text x="812" y="384" class="bb-num" style="text-anchor:start">F</text>
+      <text x="812" y="414" class="bb-num" style="text-anchor:start">G</text>
+      <text x="812" y="444" class="bb-num" style="text-anchor:start">H</text>
+      <text x="812" y="474" class="bb-num" style="text-anchor:start">I</text>
+      <text x="812" y="504" class="bb-num" style="text-anchor:start">J</text>
+
+  <text x="300" y="562" class="bb-net" fill="var(--net-gnd)">GND</text>
+  <text x="360" y="562" class="bb-net" fill="var(--net-3v3)">3V3</text>
+  <text x="540" y="562" class="bb-net" fill="var(--accent)">inverter: cols 6&#8211;10, top half only</text>
+</svg></div>
+    <figcaption>Filled holes are occupied; rings are free. The whole inverter lives in the
+    <b>top half</b> (rows A&#8211;E), so all four of its external wires leave from row&#160;A in one tidy
+    bundle. The <b>bottom half</b> holds the 100&#160;nF and the four dupont power wires,
+    which exit left. Columns 11&#8211;17 are untouched &#8212; room for the flash-LED MOSFET or a second
+    sensor later.</figcaption>
+  </figure>
+
+  <h3>Every hole, in order</h3>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Hole</th><th>Net</th><th>What goes in it</th></tr></thead>
+    <tbody>
+      <tr class="gnd"><td class="hole">A1</td><td>GND</td><td>buck&#8211;boost OUT&#8209;side GND &#183; black solid core</td></tr>
+      <tr class="gnd"><td class="hole">D1 &#8594; D8</td><td>GND</td><td>jumper &#8212; transistor emitter to ground</td></tr>
+      <tr class="gnd"><td class="hole">C1</td><td>GND</td><td>1000 &#181;F electrolytic, <b>negative</b> (striped) lead</td></tr>
+      <tr class="gnd"><td class="hole">E1 &#8594; G1</td><td>GND</td><td>bridge joining the two halves of column 1</td></tr>
+      <tr class="gnd"><td class="hole">F1</td><td>GND</td><td>100 nF ceramic</td></tr>
+      <tr class="gnd"><td class="hole">H1</td><td>GND</td><td>ESP32&#8209;CAM GND &#183; dupont M/F</td></tr>
+      <tr class="gnd"><td class="hole">I1</td><td>GND</td><td>AM312 GND &#183; dupont M/F</td></tr>
+      <tr class="gnd"><td class="hole">B1, J1</td><td>GND</td><td>free &#8212; meter probe points</td></tr>
+      <tr class="v33"><td class="hole">A3</td><td>3V3</td><td>buck&#8211;boost OUT &#183; red solid core</td></tr>
+      <tr class="v33"><td class="hole">B3 &#8594; B10</td><td>3V3</td><td>10 k&#8486; pull-up to the collector</td></tr>
+      <tr class="v33"><td class="hole">C3</td><td>3V3</td><td>1000 &#181;F electrolytic, <b>positive</b> lead</td></tr>
+      <tr class="v33"><td class="hole">E3 &#8594; G3</td><td>3V3</td><td>bridge joining the two halves of column 3</td></tr>
+      <tr class="v33"><td class="hole">F3</td><td>3V3</td><td>100 nF ceramic</td></tr>
+      <tr class="v33"><td class="hole">H3</td><td>3V3</td><td>ESP32&#8209;CAM 3V3 pin &#183; dupont M/F</td></tr>
+      <tr class="v33"><td class="hole">I3</td><td>3V3</td><td>AM312 VCC &#183; dupont M/F</td></tr>
+      <tr class="v33"><td class="hole">D3, J3</td><td>3V3</td><td>free &#8212; meter probe points</td></tr>
+      <tr class="sig"><td class="hole">A6</td><td>PIR OUT</td><td>AM312 OUT &#183; dupont M/F</td></tr>
+      <tr class="sig"><td class="hole">E6 &#8594; E9</td><td>PIR OUT / base</td><td>10 k&#8486; base resistor</td></tr>
+      <tr class="sig"><td class="hole">C8</td><td>emitter</td><td>2N3904 emitter leg</td></tr>
+      <tr class="sig"><td class="hole">C9</td><td>base</td><td>2N3904 base leg &#8212; always the middle pin</td></tr>
+      <tr class="sig"><td class="hole">C10</td><td>collector</td><td>2N3904 collector leg</td></tr>
+      <tr class="sig"><td class="hole">A10</td><td>collector</td><td>ESP32&#8209;CAM GPIO 13 &#183; dupont M/F</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="flag col">
+    <span class="kicker">Transistor orientation</span>
+    <p>Insert the TO-92 into C8/C9/C10 with its <b>flat face pointing toward the centre channel</b>.
+    The middle leg is the base on every part in this family, so C9 is right either way. In that
+    orientation a <b>2N3904</b> reads E&#8211;B&#8211;C left to right, which is what the map shows. A
+    <b>BC547/BC548</b> is the mirror image &#8212; if that&#8217;s what you have, swap column 8 and column 10:
+    the jumper goes to C10&#8217;s column and the pull-up plus GPIO&#160;13 wire go to C8&#8217;s.</p>
+    <p>You don&#8217;t have to trust either of us. Step&#160;6 below measures it.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="sec-num">06</div><div><h2>Why the inverter is there at all</h2></div></div>
+  <div class="col">
+  <p>The AM312 idles LOW and pulses HIGH for ~2&#160;s on motion. Wired straight to GPIO&#160;13 that
+  would be fine electrically &#8212; and fatal to the SD card, because GPIO&#160;13 is D3 and a card that
+  samples D3 low during init comes up in SPI mode. So the transistor flips it:</p>
+  <ul class="tight">
+    <li><b>Idle.</b> PIR output low &#8594; no base current &#8594; transistor off &#8594; the 10&#160;k pulls
+    the collector to 3.3&#160;V. GPIO&#160;13 sits HIGH, which is exactly what the card wants, and
+    <em>no current flows through the pull-up</em>. Sleep cost: zero.</li>
+    <li><b>Motion.</b> PIR drives 3.3&#160;V &#8594; (3.3&#8722;0.7)/10&#160;k &#8776; 260&#160;&#181;A of base
+    current &#8594; transistor saturates &#8594; collector pulled to ~0.1&#160;V &#8594; <code>ext0</code> fires on
+    the falling edge. The pull-up burns 330&#160;&#181;A for those two seconds. Irrelevant.</li>
+    <li><b>Sensor unplugged.</b> Base floats at 0&#160;V through nothing, transistor stays off, pin stays
+    HIGH &#8212; reads as &#8220;no motion&#8221;. The firmware&#8217;s <code>INPUT_PULLUP</code> agrees. Fails safe.</li>
+  </ul>
+  <p>Your external 10&#160;k also dominates the ESP32&#8217;s internal ~45&#160;k pull-up, which gives a
+  cleaner, faster falling edge into the wake comparator than the internal one alone.</p>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><div class="sec-num">07</div><div><h2>Bring-up order</h2></div></div>
+  <p class="col">Do not skip ahead. Each step is cheap; the failure each one catches is not.</p>
+  <ol class="steps">
+    <li>
+      <h3>Measure what the module does now</h3>
+      <p>Pack &#8594; VIN/GND, nothing else. Read OUT&#8594;GND. Write it down. This is your evidence that
+      the jumper move actually did something.</p>
+    </li>
+    <li>
+      <h3>Move the jumper</h3>
+      <p>Flux the existing blob, add a little <em>fresh</em> solder to it &#8212; counterintuitive, but it
+      makes the old joint flow &#8212; then wick it off. Confirm the 5V pair no longer beeps, and neither
+      does 4V2. Then flux the 3V3 pads and drag a small ball across. Confirm only the 3V3 pair beeps.</p>
+    </li>
+    <li>
+      <h3>Verify 3.30&#160;V, loaded</h3>
+      <p>Power VIN again: OUT must read 3.25&#8211;3.35&#160;V. Then hang ~10&#160;&#8486; across it
+      (&#8776;330&#160;mA, the ESP32&#8217;s TX peak) for a few seconds and confirm it holds. A converter that
+      sags here will brown out the camera later.</p>
+    </li>
+    <li>
+      <h3>Solder the four wires</h3>
+      <p>Stranded to VIN/GND with the fuse and polarized plug on the far end; solid core to OUT/GND.
+      Re-check OUT at the far end of the solid-core wires before going further.</p>
+    </li>
+    <li>
+      <h3>Build the breadboard &#8212; no ESP32, no PIR</h3>
+      <p>Nets, bridges, both capacitors (watch the electrolytic&#8217;s stripe &#8594; column&#160;1),
+      transistor, both resistors, jumper. Power it up and probe the spare holes: B1/J1 must be 0&#160;V,
+      D3/J3 must be 3.3&#160;V. Then probe the collector column &#8212; it should read ~3.3&#160;V.</p>
+    </li>
+    <li>
+      <h3>Add the PIR and test the inverter</h3>
+      <p>Three wires to I3/I1/A6. Meter on the collector column. Idle: ~3.3&#160;V. Wave your hand:
+      it must drop below 0.3&#160;V for about two seconds, then return. <b>If it does the opposite, your
+      transistor is a BC547-style pinout &#8212; swap columns 8 and 10.</b> This is the test that makes the
+      orientation question moot.</p>
+    </li>
+    <li>
+      <h3>Only now plug in the ESP32-CAM</h3>
+      <p>3V3, GND, GPIO&#160;13. Nothing goes to the 5V pin. If step&#160;3 or step&#160;6 hasn&#8217;t passed,
+      this step can cost you a board.</p>
+    </li>
+    <li>
+      <h3>Watch a full cycle on serial</h3>
+      <p>Motion &#8594; wake &#8594; SD mount &#8594; 300 frames &#8594; upload &#8594; sleep, several times running.
+      Then pull the ESP32&#8217;s 3V3 dupont, put the meter in series with it, and get the deep-sleep number
+      &#8212; that&#8217;s the measurement the whole cell-count decision is waiting on.</p>
+    </li>
+  </ol>
+</section>
+
+<section>
+  <div class="sec-head"><div class="sec-num">08</div><div><h2>What you need on the bench</h2></div></div>
+  <div class="tbl-wrap">
+  <table>
+    <thead><tr><th>Item</th><th>Spec</th><th>Why this one</th></tr></thead>
+    <tbody>
+      <tr><td class="hole">Stranded wire</td><td>22 AWG silicone, red + black</td><td>battery side &#8212; survives repeated unplugging</td></tr>
+      <tr><td class="hole">Solid-core wire</td><td>22 AWG, red + black</td><td>output side &#8212; the only thing a breadboard clip grips properly</td></tr>
+      <tr><td class="hole">Polarized plug</td><td>XT30 or JST-VH, 2-pin</td><td>reverse polarity destroys a TPS63020 instantly</td></tr>
+      <tr><td class="hole">Fuse</td><td>1&#8211;2 A inline or polyfuse</td><td>on battery + &#8212; a parallel pack has no current limit of its own</td></tr>
+      <tr><td class="hole">Dupont M/F jumpers</td><td>6 off, ~150 mm</td><td>female onto ESP32 and AM312 headers, male into the breadboard</td></tr>
+      <tr><td class="hole">Resistors</td><td>2 &#215; 10 k&#8486;, &#188; W</td><td>base and pull-up</td></tr>
+      <tr><td class="hole">Transistor</td><td>2N3904 (or BC547)</td><td>the inverter</td></tr>
+      <tr><td class="hole">Capacitors</td><td>1000 &#181;F &#8805;10 V electrolytic, 100 nF ceramic</td><td>5 mm lead pitch spans columns 1&#8594;3 exactly</td></tr>
+      <tr><td class="hole">Proto board</td><td>breadboard-pattern PCB, 170-point</td><td>for later &#8212; the layout above transfers hole-for-hole</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="flag col">
+    <span class="kicker">Still to check with your own eyes</span>
+    <p>Read the AM312&#8217;s pin labels off its silkscreen with a magnifier before you wire it &#8212; the
+    photo isn&#8217;t legible enough for me to confirm the order, and breakouts vary. If the silkscreen is
+    unreadable, the GND pin is the one with continuity to the dome&#8217;s metal can.</p>
+  </div>
+</section>
+
+</div>

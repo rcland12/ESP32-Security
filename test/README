@@ -1,11 +1,56 @@
+AVI container test
+==================
 
-This directory is intended for PlatformIO Test Runner and project tests.
+The RIFF/AVI layout is hand-written by VideoRecorder, and every historical bug
+in it came from hand-counted byte offsets drifting out of sync with the bytes
+actually emitted. AviFormat.h therefore derives all offsets from the chunk sizes
+and keeps no Arduino dependencies, so the same code the firmware runs can be
+compiled and exercised on a PC.
 
-Unit Testing is a software testing method by which individual units of
-source code, sets of one or more MCU program modules together with associated
-control data, usage procedures, and operating procedures, are tested to
-determine whether they are fit for use. Unit testing finds problems early
-in the development cycle.
+avi_format_test.cpp checks the derived offsets, then muxes real JPEGs into an
+AVI using the same calls as VideoRecorder::recordVideo(). ffprobe and ffmpeg
+judge the result. This catches malformed containers that on-device testing tends
+to miss, because players are forgiving enough to play a subtly broken file.
 
-More information about PlatformIO Unit Testing:
-- https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+Requires: g++, ffmpeg/ffprobe. No hardware, no ESP32 toolchain.
+
+Run
+---
+
+    cd test
+    OUT=$(mktemp -d)
+
+    # 30 frames = 3 seconds at 10 fps
+    mkdir -p "$OUT/frames"
+    ffmpeg -v error -f lavfi -i testsrc=size=640x480:rate=10:duration=3 \
+           -q:v 10 "$OUT/frames/f%03d.jpg"
+
+    g++ -std=c++17 -Wall -Wextra -I ../lib/VideoRecorder/src \
+        -o "$OUT/avi_test" avi_format_test.cpp
+
+    "$OUT/avi_test" "$OUT/out.avi" "$OUT"/frames/*.jpg
+
+Then verify the container. All three must pass:
+
+    # 1. No demuxer warnings, and the metadata must be exact
+    ffprobe -v error -select_streams v:0 \
+      -show_entries stream=nb_frames,r_frame_rate,width,height,codec_name \
+      -show_entries format=duration -of default=nw=1 "$OUT/out.avi"
+    #   expect: mjpeg, 640x480, r_frame_rate=10/1, nb_frames=30, duration=3.000000
+
+    # 2. Every frame decodes; any output at all means corruption
+    ffmpeg -v error -i "$OUT/out.avi" -f null -
+
+    # 3. Frames decoded matches frames written
+    ffprobe -v error -count_frames -select_streams v:0 \
+      -show_entries stream=nb_read_frames -of csv=p=0 "$OUT/out.avi"
+
+Note on strictness
+------------------
+
+ffmpeg's AVI demuxer is tolerant and will rescan its way past malformed chunk
+sizes, so "it plays in VLC" is not evidence the container is correct. The
+original header understated nothing visibly, yet a spec-literal parser
+following the declared LIST hdrl size landed 8 bytes past the movi LIST and
+mis-parsed. If you change the layout, verify with a parser that trusts the
+declared sizes rather than one that recovers from them.
